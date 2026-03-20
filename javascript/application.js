@@ -1,4 +1,4 @@
-const LEVELS_PER_ROW = 1;
+const LEVELS_PER_ROW = 3;
 const TURN_LENGTH = 0;
 const WORDS_PER_LEVEL = 1;
 
@@ -6,7 +6,7 @@ let HSK = [];
 let revealIndex = 0;
 
 async function loadHSK() {
-  const res = await fetch("./data/result_shuffled.json");
+  const res = await fetch("./data/result.json");
   HSK = await res.json();
 }
 
@@ -63,123 +63,18 @@ function isLevelCompleted(level) {
   return !!progress.completedLevels?.[level];
 }
 
-function toggleRestore() {
-  const panel = document.getElementById("restore-panel");
-  panel.style.display =
-    panel.style.display === "none" ? "block" : "none";
-}
-
-function restoreFromInput() {
-  const level = parseInt(
-    document.getElementById("restore-level").value,
-    10
-  );
-
-  if (!level || level < 1) return;
-
-  restoreProgressToLevel(level);
-}
-
-function restoreProgressToLevel(level) {
-  const progress = getProgress();
-  progress.completedLevels ||= {};
-
-  const maxId = Math.max(...HSK.map(c => c.id));
-  const totalLevels = Math.ceil(maxId / WORDS_PER_LEVEL);
-
-  console.log('[Egor]', totalLevels)
-  for (let i = 1; i < level; i++) {
-    if (i < totalLevels) {
-      progress.completedLevels[i] = true;
-    }
-  }
-
-  saveProgress(progress);
-  location.hash = "#";
-  window.location.reload();
-}
-function getHumanSrsLimit() {
-  const limit = getSrsLimit();
-  return limit == 9999999 ? 'All' : limit;
-}
-
-function getSrsLimit() {
-  const progress = getProgress();
-  return progress.settings?.srsLimit || 9999999;
-}
-
-function setSrsLimit(value) {
-  const progress = getProgress();
-  progress.settings ||= {};
-  progress.settings.srsLimit = value == 'All' ? 9999999 : value;
-  saveProgress(progress);
-}
-function toggleSrsSize() {
-  const menu = document.getElementById("srs-size-menu");
-  menu.style.display =
-    menu.style.display === "none" ? "block" : "none";
-}
-function selectSrsSize(value) {
-  setSrsLimit(value);
-
-  document.getElementById("srs-size-btn").textContent = `${value}`;
-
-  document.getElementById("srs-size-menu").style.display = "none";
-}
-
-function revealWordStep(usage, word, step) {
-  if (!usage || !word) return usage;
-
-  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const revealed =
-    word.slice(0, step) + "*".repeat(Math.max(0, word.length - step));
-
-  const regex = new RegExp(escaped, "gi");
-  return usage.replace(regex, revealed);
-}
-
-
 function renderPath() {
   const maxId = Math.max(...HSK.map(c => c.id));
   const totalLevels = Math.ceil(maxId / WORDS_PER_LEVEL);
 
-  // const visibleLevels = [];
-  // for (let lvl = 1; lvl <= totalLevels; lvl++) {
-  //   if (!isLevelEmpty(lvl) && !isLevelCompleted(lvl)) {
-  //     visibleLevels.push(lvl);
-  //   }
-  // }
-
+  const visibleLevels = [];
+  for (let lvl = 1; lvl <= totalLevels; lvl++) {
+    visibleLevels.push(lvl);
+  }
   app.innerHTML = `
     <div class="fixed-bottom">
       <button id='srs-btn' onclick='startSrsSession()'>SRS</button>
-      <button id="speak-mute-btn" onclick="toggleSpeakMute()">${SPEAK_MUTED ? "🔇" : "🔊"}</button>
-      <button class="dev-toggle" onclick="toggleRestore()">⚙︎</button>
-      <button class="srs-size-btn" onclick="toggleSrsSize()" id="srs-size-btn">${getHumanSrsLimit()}</button>
     </div>
-
-    <div id="srs-calendar" style="display:none"></div>
-
-    <div id="restore-panel" style="display:none">
-      <h1>Open levels til</h1>
-      <input type="number" id="restore-level" placeholder="Open levels til" min="1"/>
-      <button class="restore-rom-input-btn" onclick="restoreFromInput()">Save</button>
-
-      <h1>Ignore levels til</h1>
-      <input type="number" id="ignore-level" placeholder="Ignore levels til" min="1"/>
-      <button class="ignore-rom-input-btn" onclick="ignoreSrsUntilLevel()">Save</button>
-    </div>
-
-    <div id="srs-size-menu" class="srs-size-menu" style="display:none">
-      <button class="select-srs-size-btn" onclick="selectSrsSize(5)">5</button>
-      <button class="select-srs-size-btn" onclick="selectSrsSize(10)">10</button>
-      <button class="select-srs-size-btn" onclick="selectSrsSize(25)">25</button>
-      <button class="select-srs-size-btn" onclick="selectSrsSize(50)">50</button>
-      <button class="select-srs-size-btn" onclick="selectSrsSize('All')">All</button>
-      <button class="srs-reset-ignored" onclick="resetIgnoredSrs()">Reset ignored</button>
-    </div>
-
-
     <div class='path' id='path'></div>
   `;
 
@@ -188,52 +83,25 @@ function renderPath() {
   let index = 0;
   let direction = "forward";
 
-  // while (index < visibleLevels.length) {
-  //   const rowLevels = visibleLevels.slice(
-  //     index,
-  //     index + LEVELS_PER_ROW
-  //   );
+  while (index < visibleLevels.length) {
+    const rowLevels = visibleLevels.slice(
+      index,
+      index + LEVELS_PER_ROW
+    );
 
-  //   createRowFromLevels(path, direction, rowLevels);
-  //   index += rowLevels.length;
+    createRowFromLevels(path, direction, rowLevels);
+    index += rowLevels.length;
 
-  //   if (index >= visibleLevels.length) break;
+    if (index >= visibleLevels.length) break;
 
-  //   if (TURN_LENGTH > 0) {
-  //     const turnLevels = visibleLevels.slice(index, index + TURN_LENGTH);
-  //     createTurnFromLevels(path, direction, turnLevels);
-  //     index += turnLevels.length;
-  //   }
-
-  //   direction = direction === "forward" ? "backward" : "forward";
-  // }
-}
-
-
-function ignoreSrsUntilLevel() {
-  const level = parseInt(
-    document.getElementById("ignore-level")?.value,
-    10
-  )
-
-  if (!Number.isInteger(level) || level < 2) return
-
-  const progress = getProgress()
-
-  progress.ignoredFromSrs ||= {}
-  progress.completedLevels ||= {};
-
-  for (let i = 1; i < level; i++) {
-    progress.completedLevels[i] = true;
-
-    for (const char of getCharsForLevel(i)) {
-      progress.ignoredFromSrs[char.id] = true
+    if (TURN_LENGTH > 0) {
+      const turnLevels = visibleLevels.slice(index, index + TURN_LENGTH);
+      createTurnFromLevels(path, direction, turnLevels);
+      index += turnLevels.length;
     }
-  }
 
-  saveProgress(progress)
-  location.hash = "#";
-  window.location.reload();
+    direction = direction === "forward" ? "backward" : "forward";
+  }
 }
 
 function getCharsForLevel(level) {
@@ -250,21 +118,8 @@ function getWordsPreviewForLevel(level) {
   let filtered = getCharsForLevel(level).filter(c => !isIgnoredFromSrs(c.id))
 
   return filtered.map((c, i) =>
-      `${c.pl}`
+      `${c.polish_word}`
     ).join("");
-}
-
-function resetIgnoredSrs() {
-  const progress = getProgress();
-
-  if (progress.ignoredFromSrs) {
-    delete progress.ignoredFromSrs;
-    saveProgress(progress);
-  }
-  document.getElementById("srs-size-menu").style.display = "none";
-
-  location.hash = "#";
-  window.location.reload();
 }
 
 function createRowFromLevels(container, direction, levels) {
@@ -277,12 +132,8 @@ function createRowFromLevels(container, direction, levels) {
       : [...levels].reverse();
 
   const count = orderedLevels.length;
-  const nextAvailable = getNextAvailableLevel();
 
   orderedLevels.forEach((lvl, index) => {
-    if (lvl > nextAvailable) {
-      return;
-    }
     const cell = document.createElement("div");
     cell.className = "cell";
 
@@ -290,39 +141,17 @@ function createRowFromLevels(container, direction, levels) {
 
     const levelNum = document.createElement("div");
     levelNum.className = "level-number";
-    levelNum.textContent = lvl;
+    levelNum.textContent = getVerbPreviewForLevel(lvl);
     btn.appendChild(levelNum);
-
-    if (isLevelCompleted(lvl)) {
-      const polish = document.createElement("div");
-      polish.innerHTML = lvl;
-      btn.appendChild(polish);
-    }
-
-    // 🔹 zigzag offset (same logic, just array-based)
-    if (direction !== "forward") {
-      const step = 20;
-      const offset =
-        direction === "forward"
-          ? index * step
-          : (count - 1 - index) * step;
-
-      btn.style.marginTop = `${offset}px`;
-    }
 
     if (isLevelCompleted(lvl)) {
       btn.classList.add("completed");
     }
 
-    if (lvl > nextAvailable) {
-      btn.classList.add("locked");
-      btn.disabled = true;
-    } else {
-      btn.onclick = () => {
-        location.hash = `/level/${lvl}`;
-        window.location.reload();
-      };
-    }
+    btn.onclick = () => {
+      location.hash = `/level/${lvl}`;
+      window.location.reload();
+    };
 
     cell.appendChild(btn);
     row.appendChild(cell);
@@ -332,81 +161,11 @@ function createRowFromLevels(container, direction, levels) {
   }
 }
 
-function scrollBottom() {
-  window.scrollTo({
-    top: 999999,
-    behavior: "instant"
-  });
-}
-function createRow(container, direction, start, end) {
-  const row = document.createElement("div");
-  row.className = "row";
+function getVerbPreviewForLevel(level) {
 
-  const levels =
-    direction === "forward"
-      ? range(start, end)
-      : range(start, end).reverse();
+  let filtered = getCharsForLevel(level).filter(c => !isIgnoredFromSrs(c.hanzi))
 
-  const count = levels.length;
-
-  levels.forEach((lvl, index) => {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-
-    const btn = document.createElement("button");
-
-    if (isLevelCompleted(lvl)) {
-      const polish = document.createElement("div");
-      polish.className = "level-polish";
-      polish.innerHTML = lvl;
-      btn.appendChild(polish);
-    } else {
-      btn.textContent = lvl;
-    }
-
-    // 🔹 zigzag offset (same logic, just array-based)
-    if (direction !== "forward") {
-      const step = 20;
-      const offset =
-        direction === "forward"
-          ? index * step
-          : (count - 1 - index) * step;
-
-      btn.style.marginTop = `${offset}px`;
-    }
-
-
-    if (isLevelCompleted(lvl)) {
-      btn.classList.add("completed");
-    }
-
-    const nextAvailable = getNextAvailableLevel();
-
-    if (lvl > nextAvailable) {
-      btn.classList.add("locked");
-      btn.disabled = true;
-    } else {
-      btn.onclick = () => {
-        location.hash = `/level/${lvl}`;
-        window.location.reload();
-      };
-    }
-
-    cell.appendChild(btn);
-    row.appendChild(cell);
-  });
-
-  container.appendChild(row);
-}
-
-function getNextAvailableLevel() {
-  const progress = getProgress();
-  const completed = Object.keys(progress.completedLevels || {})
-    .map(Number);
-
-  if (completed.length === 0) return 1;
-
-  return Math.max(...completed) + 1;
+  return filtered.map((c, i) => c.polish_word)
 }
 
 function getAllLearnedChars() {
@@ -421,12 +180,12 @@ function getAllLearnedChars() {
   return chars.filter(c => !isIgnoredFromSrs(c.id));
 }
 
-
 function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
+
 function startSrsSession() {
-  const limit = getSrsLimit();
+  const limit = 9999999;
   const all = shuffle(getAllLearnedChars());
   const session = all.slice(0, limit);
 
@@ -436,49 +195,6 @@ function startSrsSession() {
   }));
 
   location.hash = "#/srs";
-}
-function createTurn(container, direction, startLevel) {
-  for (let i = 0; i < TURN_LENGTH; i++) {
-    const lvl = startLevel + i;
-
-    const row = document.createElement("div");
-    row.className = "row turn";
-
-    const cell = document.createElement("div");
-    cell.className = "cell";
-
-    const btn = document.createElement("button");
-    btn.className = "secondary";
-    btn.textContent = lvl;
-    if (isLevelCompleted(lvl)) {
-      btn.classList.add("completed");
-    }
-    const nextAvailable = getNextAvailableLevel();
-
-    if (lvl > nextAvailable) {
-      btn.classList.add("locked");
-      btn.disabled = true;
-    } else {
-      btn.onclick = () => {
-        location.hash = `/level/${lvl}`;
-        window.location.reload();
-      };
-    }
-
-    cell.appendChild(btn);
-    row.appendChild(cell);
-
-    row.style.justifyContent =
-      direction === "forward" ? "flex-end" : "flex-start";
-
-    container.appendChild(row);
-  }
-}
-
-function range(a, b) {
-  const res = [];
-  for (let i = a; i <= b; i++) res.push(i);
-  return res;
 }
 
 function getCharsForLevel(level) {
@@ -492,15 +208,7 @@ function goBack(level, index) {
     location.hash = `#/level/${level}/${index - 1}`;
   } else {
     location.hash = "#";
-    setTimeout(scrollBottom, 0);
   }
-}
-
-function finishLevel(level) {
-  markLevelCompleted(level);
-  location.hash = "#";
-  // window.location.reload();
-  setTimeout(scrollBottom, 0);
 }
 
 function finishAndGoNext(level) {
@@ -518,16 +226,6 @@ function finishAndGoNext(level) {
   window.location.reload();
 }
 
-function resetReveal(state) {
-  state.chars.forEach(ch => {
-    if (!isSeparator(ch.original)) {
-      ch.revealed = false;
-    }
-  });
-
-  state.index = 0;
-}
-
 function renderLevel(level, index = 0) {
   const chars = getCharsForLevel(level);
   const c = chars[index];
@@ -543,16 +241,96 @@ function renderLevel(level, index = 0) {
           ? `<button class="next-btn" onclick="location.hash='#/level/${level}/${index + 1}'">→</button>`
           : `<button class="next-btn" onclick="finishAndGoNext(${level})">→</button>`
       }
-      <button class="speak-btn" onclick="speak('${c.pl}')">🔊</button>
     </div>
 
     <div class="char-card">
-      <div class="russian_translation">${c.ru}</div>
+      <div class="verb">${c.polish_word} (${c.russian})</div>
       <div id="sentence-reveal"></div>
     </div>
   `;
-  initSentenceReveal("sentence-reveal", c.pl);
+  renderVerbReveal("sentence-reveal", c)
 }
+function createVerbRevealState(verb) {
+  const cells = [];
+
+  function push(tense, person, value, meta = {}) {
+    cells.push({
+      tense,
+      person,
+      value,
+      revealedCount: 0,
+      ...meta
+    });
+  }
+
+  // PRESENT
+  Object.entries(verb.present).forEach(([p, v]) => {
+    push("present", p, v);
+  });
+
+  // PAST (m/f + ono отдельно)
+  ["ja","ty","on","ona","my","wy","oni","one"].forEach(p => {
+    push("past", p, verb.past.masculine[p], { gender: "m" });
+    push("past", p, verb.past.feminine[p], { gender: "f" });
+  });
+
+  push("past", "ono", verb.past.neuter.ono, { gender: "n" });
+
+  // FUTURE
+  ["ja","ty","on","ona","my","wy","oni","one"].forEach(p => {
+    push("future", p, verb.future.masculine[p], { gender: "m" });
+    push("future", p, verb.future.feminine[p], { gender: "f" });
+  });
+
+  push("future", "ono", verb.future.neuter.ono, { gender: "n" });
+
+  // CONDITIONAL
+  ["ja","ty","on","ona","my","wy","oni","one"].forEach(p => {
+    push("conditional", p, verb.conditional.masculine[p], { gender: "m" });
+    push("conditional", p, verb.conditional.feminine[p], { gender: "f" });
+  });
+
+  push("conditional", "ono", verb.conditional.neuter.ono, { gender: "n" });
+
+  // IMPERATIVE
+  Object.entries(verb.imperative).forEach(([p, v]) => {
+    push("imperative", p, v);
+  });
+
+  return {
+    cells,
+    index: 0
+  };
+}
+function renderPresentMasked(state) {
+  return `
+    <h2 class="header-h2">Present</h2>
+    <table class="verb-table">
+      ${["ja","ty","on","ona","ono","my","wy","oni","one"]
+        .map(p => {
+          const cell = state.cells.find(c => c.tense==="present" && c.person===p);
+          return `
+            <tr>
+              <td>${p}</td>
+              <td>${mask(cell?.value, cell?.revealedCount)}</td>
+            </tr>
+          `;
+        }).join("")}
+    </table>
+  `;
+}
+function mask(val, revealedCount) {
+  if (!val) return "-";
+
+  return val
+    .split("")
+    .map((ch, i) => {
+      if (ch === " ") return " ";
+      return i < revealedCount ? ch : "*";
+    })
+    .join("");
+}
+
 function createRevealState(sentence) {
   const chars = sentence.split("").map((ch, i, arr) => {
     const prev = arr[i - 1];
@@ -590,139 +368,11 @@ function buildMaskedSentence(state) {
     return ch.revealed ? ch.original : "*";
   }).join("");
 }
-function revealOneLetter(state) {
-  // pomijamy separatory i już odkryte litery
-  while (
-    state.index < state.chars.length &&
-    (
-      isSeparator(state.chars[state.index].original) ||
-      state.chars[state.index].revealed
-    )
-  ) {
-    state.index++;
-  }
-
-  if (state.index >= state.chars.length) return;
-
-  // odkrywamy literę
-  state.chars[state.index].revealed = true;
-
-  const { start, end } = getWordBounds(state, state.index);
-
-  // sprawdzamy czy całe słowo odkryte
-  let fullyRevealed = true;
-  for (let i = start; i < end; i++) {
-    if (!state.chars[i].revealed) {
-      fullyRevealed = false;
-      break;
-    }
-  }
-
-  if (fullyRevealed) {
-    const word = state.chars
-      .slice(start, end)
-      .map(ch => ch.original)
-      .join("");
-
-    speak(word);
-  }
-
-  state.index++;
-}
-
-
-
-function initSentenceReveal(containerId, sentence) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  const state = createRevealState(sentence);
-
-  function render() {
-    const fullyRevealed = isFullyRevealed(state);
-
-    container.innerHTML = `
-      <div class="pl-row">
-        <button id="repeat-btn" class="secondary-btn">↺</button>
-        <div style="${fullyRevealed ? 'display:none;' : ''}">
-          <button id="reveal-letter" class="secondary-btn">+</button>
-          <button id="reveal-word" class="secondary-btn">++</button>
-          <button id="reveal-all" class="secondary-btn">+++</button>
-        </div>
-      </div>
-      <p class="pl-translation">${buildMaskedSentence(state)}</p>
-    `;
-
-    if (!fullyRevealed) {
-      document.getElementById("reveal-letter").onclick = () => {
-        revealOneLetter(state);
-        render();
-      };
-
-      document.getElementById("reveal-word").onclick = () => {
-        revealWholeWord(state);
-        render();
-      };
-
-      document.getElementById("reveal-all").onclick = () => {
-        revealAll(state);
-        render();
-      };
-    }
-    document.getElementById("repeat-btn").onclick = () => {
-      resetReveal(state);
-      render();
-    };
-  }
-
-  render();
-}
-function revealAll(state) {
-  state.chars.forEach(ch => {
-    if (
-      ch.original !== " " &&
-      ch.original !== "," &&
-      ch.original !== "." &&
-      ch.original !== "?"
-    ) {
-      ch.revealed = true;
-    }
-  });
-
-  state.index = state.chars.length;
-}
-
-function revealWholeWord(state) {
-  // пропускаем сепараторы
-  while (
-    state.index < state.chars.length &&
-    isSeparator(state.chars[state.index].original)
-  ) {
-    state.index++;
-  }
-
-  if (state.index >= state.chars.length) return;
-
-  const { start, end } = getWordBounds(state, state.index);
-
-  for (let i = start; i < end; i++) {
-    state.chars[i].revealed = true;
-  }
-
-  const word = state.chars
-    .slice(start, end)
-    .map(ch => ch.original)
-    .join("");
-
-  speak(word);
-
-  state.index = end;
-}
-
 
 function isSeparator(ch) {
   return ch === " " || ch === "," || ch === "." || ch === "?";
 }
+
 function getWordBounds(state, fromIndex) {
   let start = fromIndex;
 
@@ -747,34 +397,6 @@ function getWordBounds(state, fromIndex) {
   return { start, end };
 }
 
-function getWordFromIndex(state, startIndex) {
-  let word = "";
-  let i = startIndex;
-
-  while (
-    i < state.chars.length &&
-    state.chars[i].original !== " " &&
-    state.chars[i].original !== "," &&
-    state.chars[i].original !== "." &&
-    state.chars[i].original !== "?"
-  ) {
-    word += state.chars[i].original;
-    i++;
-  }
-
-  return word;
-}
-
-function isFullyRevealed(state) {
-  return state.chars.every(ch =>
-    ch.original === " " ||
-    ch.original === "," ||
-    ch.original === "." ||
-    ch.original === "?" ||
-    ch.revealed
-  );
-}
-
 function ignoreCurrentSrsChar() {
   const session = JSON.parse(localStorage.getItem("srsSession"));
   if (!session) return;
@@ -783,7 +405,6 @@ function ignoreCurrentSrsChar() {
 
   ignoreCharFromSrs(c.id);
 
-  // сразу убираем из текущей сессии
   session.chars.splice(session.index, 1);
 
   if (session.index >= session.chars.length) {
@@ -793,7 +414,6 @@ function ignoreCurrentSrsChar() {
     renderSrs();
   }
 }
-
 
 function renderSrs() {
   const session = JSON.parse(localStorage.getItem("srsSession"));
@@ -812,23 +432,22 @@ function renderSrs() {
 
   app.innerHTML = `
     <div class="fixed-bottom">
-      <button class="back-btn" onclick="location.hash = '#';setTimeout(scrollBottom, 0);">←</button>
+      <button class="back-btn" onclick="location.hash = '#';">←</button>
       <button class="ignore-btn" onclick="ignoreCurrentSrsChar()">
         -
       </button>
       <button class="next-srs-btn"  onclick="nextSrs()">
         ${isLast ? "✓" : "→"}
       </button>
-      <button class="speak-btn" onclick="speak('${c.pl}')">🔊</button>
     </div>
 
     <div class="char-card">
       <div class="progress" style="display: none">${index + 1} / ${chars.length}</div>
-      <div class="russian_translation">${c.ru}</div>
+      <div class="verb">${c.polish_word} (${c.russian})</div>
       <div id="sentence-reveal"></div>
     </div>
   `;
-  initSentenceReveal("sentence-reveal", c.pl);
+  renderVerbReveal("sentence-reveal", c)
 }
 
 function nextSrs() {
@@ -857,48 +476,8 @@ function markSrsSeen() {
 function finishSrsSession() {
   localStorage.removeItem("srsSession");
   location.hash = "#";
-  // window.location.reload();
-  setTimeout(scrollBottom, 0);
 }
 
-function toggleSrsCalendar() {
-  const el = document.getElementById("srs-calendar");
-  if (!el.innerHTML) {
-    el.innerHTML = renderSrsMonth();
-  }
-  el.style.display = el.style.display === "none" ? "block" : "none";
-}
-
-function renderSrsMonth() {
-  const history = getProgress().srsHistory || {};
-  const now = new Date();
-
-  const year = now.getFullYear();
-  const month = now.getMonth(); // текущий
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay() || 7;
-
-  let html = `<h1>SRS Calendar</h1><div class="calendar-grid">`;
-
-  // пустые ячейки перед началом месяца
-  for (let i = 1; i < firstDay; i++) {
-    html += `<div class="day empty"></div>`;
-  }
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const count = history[date] || 0;
-
-    html += `
-      <div class="day" title="${date}: ${count}">${count}
-      </div>
-    `;
-  }
-
-  html += `</div>`;
-  return html;
-}
 function ignoreCharFromSrs(id) {
   const progress = getProgress();
   progress.ignoredFromSrs ||= {};
@@ -911,14 +490,350 @@ function isIgnoredFromSrs(id) {
   return !!progress.ignoredFromSrs?.[id];
 }
 
-let touchStartX = 0;
-let touchStartY = 0;
-let touchStartTime = 0;
+function renderVerbReveal(containerId, verb) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
 
-document.addEventListener("touchstart", e => {
-  touchStartX = e.changedTouches[0].screenX;
-});
+  const state = createVerbRevealState(verb);
 
+  function render() {
+    container.innerHTML = `
+      <div class="pl-row">
+        <button id="reveal-one">+</button>
+        <button id="reveal-row">++</button>
+        <button id="reveal-all">+++</button>
+      </div>
+
+      ${renderPresentMasked(state)}
+      ${renderPastCompactMasked(state)}
+      ${renderFutureCompactMasked(state)}
+      ${renderConditionalCompactMasked(state)}
+      ${renderImperativeMasked(state)}
+    `;
+
+    document.getElementById("reveal-one").onclick = () => {
+      revealOne(state);
+      render();
+    };
+
+    document.getElementById("reveal-row").onclick = () => {
+      revealWord(state);
+      render();
+    };
+
+    document.getElementById("reveal-all").onclick = () => {
+      revealAllVerb(state);
+      render();
+    };
+  }
+
+  render();
+}
+function revealWord(state) {
+  const cell = state.cells.find(c =>
+    c.value && c.revealedCount < c.value.length
+  );
+
+  if (!cell) return;
+
+  cell.revealedCount = cell.value.length;
+}
+function renderPresent(present) {
+  return `
+    <h2 class="header-h2">Present</h2>
+    <table class="verb-table">
+      ${row("ja", present.ja)}
+      ${row("ty", present.ty)}
+      ${row("on", present.on)}
+      ${row("ona", present.ona)}
+      ${row("ono", present.ono)}
+      ${row("my", present.my)}
+      ${row("wy", present.wy)}
+      ${row("oni", present.oni)}
+      ${row("one", present.one)}
+    </table>
+  `;
+}
+function renderPastCompact(past) {
+  return `
+    <h2 class="header-h2">Past</h2>
+    <table class="verb-table">
+      <tr>
+        <td></td>
+        <td>m</td>
+        <td>f</td>
+      </tr>
+
+      ${row2("ja", past.masculine.ja, past.feminine.ja)}
+      ${row2("ty", past.masculine.ty, past.feminine.ty)}
+      ${row2("on", past.masculine.on, "")}
+      ${row2("ona", "", past.feminine.ona)}
+      ${row2("my", past.masculine.my, past.feminine.my)}
+      ${row2("wy", past.masculine.wy, past.feminine.wy)}
+      ${row2("oni", past.masculine.oni, "")}
+      ${row2("one", "", past.feminine.one)}
+    </table>
+
+    <div class="ono-block">
+      ono: ${past.neuter.ono}
+    </div>
+  `;
+}
+function renderFutureCompact(future) {
+  return `
+    <h2 class="header-h2">Future</h2>
+    <table class="verb-table">
+      <tr>
+        <td></td>
+        <td>m</td>
+        <td>f</td>
+      </tr>
+
+      ${row2("ja", future.masculine.ja, future.feminine.ja)}
+      ${row2("ty", future.masculine.ty, future.feminine.ty)}
+      ${row2("on", future.masculine.on, "")}
+      ${row2("ona", "", future.feminine.ona)}
+      ${row2("my", future.masculine.my, future.feminine.my)}
+      ${row2("wy", future.masculine.wy, future.feminine.wy)}
+      ${row2("oni", future.masculine.oni, "")}
+      ${row2("one", "", future.feminine.one)}
+    </table>
+
+    <div class="ono-block">
+      ono: ${future.neuter.ono}
+    </div>
+  `;
+}
+function renderConditionalCompact(conditional) {
+  return `
+    <h2 class="header-h2">Conditional</h2>
+    <table class="verb-table">
+      <tr>
+        <td></td>
+        <td>m</td>
+        <td>f</td>
+      </tr>
+
+      ${row2("ja", conditional.masculine.ja, conditional.feminine.ja)}
+      ${row2("ty", conditional.masculine.ty, conditional.feminine.ty)}
+      ${row2("on", conditional.masculine.on, "")}
+      ${row2("ona", "", conditional.feminine.ona)}
+      ${row2("my", conditional.masculine.my, conditional.feminine.my)}
+      ${row2("wy", conditional.masculine.wy, conditional.feminine.wy)}
+      ${row2("oni", conditional.masculine.oni, "")}
+      ${row2("one", "", conditional.feminine.one)}
+    </table>
+
+    <div class="ono-block">
+      ono: ${conditional.neuter.ono}
+    </div>
+  `;
+}
+
+function renderPast(title, data) {
+  if (!data) return "";
+
+  return `
+    <h2 class="header-h2">${title}</h2>
+    <table class="verb-table">
+      ${Object.entries(data)
+        .map(([k, v]) => row(k, v))
+        .join("")}
+    </table>
+  `;
+}
+
+function renderImperative(data) {
+  return `
+    <h2 class="header-h2">Imperative</h2>
+    <table class="verb-table">
+      ${row("ty", data.ty)}
+      ${row("my", data.my)}
+      ${row("wy", data.wy)}
+    </table>
+  `;
+}
+function row(label, value) {
+  return `
+    <tr>
+      <td>${label}</td>
+      <td>${value || "-"}</td>
+    </tr>
+  `;
+}
+function row2(label, m, f) {
+  return `
+    <tr>
+      <td>${label}</td>
+      <td>${m || "-"}</td>
+      <td>${f || "-"}</td>
+    </tr>
+  `;
+}
+function row3(label, m, f, n) {
+  return `
+    <tr>
+      <td>${label}</td>
+      <td>${m || "-"}</td>
+      <td>${f || "-"}</td>
+      <td>${n || "-"}</td>
+    </tr>
+  `;
+}
+
+function revealOne(state) {
+  const cell = state.cells.find(c =>
+    c.value && c.revealedCount < c.value.length
+  );
+
+  if (!cell) return;
+
+  cell.revealedCount++;
+}
+
+function getCell(state, tense, person, gender) {
+  return state.cells.find(c =>
+    c.tense === tense &&
+    c.person === person &&
+    (gender ? c.gender === gender : true)
+  );
+}
+function renderPastCompactMasked(state) {
+  const t = "past";
+
+  return `
+    <h2 class="header-h2">Past</h2>
+    <table class="verb-table">
+      <tr>
+        <td></td>
+        <td>m</td>
+        <td>f</td>
+      </tr>
+
+      ${rowMasked2(state, t, "ja")}
+      ${rowMasked2(state, t, "ty")}
+      ${rowMasked2(state, t, "on")}
+      ${rowMasked2(state, t, "ona")}
+      ${rowMasked2(state, t, "my")}
+      ${rowMasked2(state, t, "wy")}
+      ${rowMasked2(state, t, "oni")}
+      ${rowMasked2(state, t, "one")}
+    </table>
+
+    <div class="ono-block">
+      ono: ${mask(
+        getCell(state, t, "ono", "n")?.value,
+        getCell(state, t, "ono", "n")?.revealedCount
+      )}
+    </div>
+  `;
+}
+function renderFutureCompactMasked(state) {
+  const t = "future";
+
+  return `
+    <h2 class="header-h2">Future</h2>
+    <table class="verb-table">
+      <tr>
+        <td></td>
+        <td>m</td>
+        <td>f</td>
+      </tr>
+
+      ${rowMasked2(state, t, "ja")}
+      ${rowMasked2(state, t, "ty")}
+      ${rowMasked2(state, t, "on")}
+      ${rowMasked2(state, t, "ona")}
+      ${rowMasked2(state, t, "my")}
+      ${rowMasked2(state, t, "wy")}
+      ${rowMasked2(state, t, "oni")}
+      ${rowMasked2(state, t, "one")}
+    </table>
+
+    <div class="ono-block">
+      ono: ${mask(
+        getCell(state, t, "ono", "n")?.value,
+        getCell(state, t, "ono", "n")?.revealedCount
+      )}
+    </div>
+  `;
+}
+function renderConditionalCompactMasked(state) {
+  const t = "conditional";
+
+  return `
+    <h2 class="header-h2">Conditional</h2>
+    <table class="verb-table">
+      <tr>
+        <td></td>
+        <td>m</td>
+        <td>f</td>
+      </tr>
+
+      ${rowMasked2(state, t, "ja")}
+      ${rowMasked2(state, t, "ty")}
+      ${rowMasked2(state, t, "on")}
+      ${rowMasked2(state, t, "ona")}
+      ${rowMasked2(state, t, "my")}
+      ${rowMasked2(state, t, "wy")}
+      ${rowMasked2(state, t, "oni")}
+      ${rowMasked2(state, t, "one")}
+    </table>
+
+    <div class="ono-block">
+      ono: ${mask(
+        getCell(state, t, "ono", "n")?.value,
+        getCell(state, t, "ono", "n")?.revealedCount
+      )}
+    </div>
+  `;
+}
+function renderImperativeMasked(state) {
+  const t = "imperative";
+
+  return `
+    <h2 class="header-h2">Imperative</h2>
+    <table class="verb-table">
+      ${["ty","my","wy"].map(p => {
+        const c = getCell(state, t, p);
+        return `
+          <tr>
+            <td>${p}</td>
+            <td>${mask(c?.value, c?.revealedCount)}</td>
+          </tr>
+        `;
+      }).join("")}
+    </table>
+  `;
+}
+function rowMasked2(state, tense, person) {
+  const m = getCell(state, tense, person, "m");
+  const f = getCell(state, tense, person, "f");
+
+  return `
+    <tr>
+      <td>${person}</td>
+      <td>${mask(m?.value, m?.revealedCount)}</td>
+      <td>${mask(f?.value, f?.revealedCount)}</td>
+    </tr>
+  `;
+}
+function revealAllVerb(state) {
+  // найти первую незакрытую ячейку
+  const target = state.cells.find(c =>
+    c.value && c.revealedCount < c.value.length
+  );
+
+  if (!target) return;
+
+  const targetTense = target.tense;
+
+  state.cells.forEach(c => {
+    if (c.tense === targetTense && c.value) {
+      c.revealedCount = c.value.length;
+    }
+  });
+}
 (async function init() {
   await loadHSK();
   router();

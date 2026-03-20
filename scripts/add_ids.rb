@@ -1,6 +1,6 @@
 require "json"
 
-FILE = "data/result_shuffled.json"
+FILE = "data/result.json"
 
 data = JSON.parse(File.read(FILE))
 

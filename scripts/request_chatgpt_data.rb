@@ -7,33 +7,231 @@ require "set"
 API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4.1"
 
-SOURCE_DATA_FILE = "data/subtlex-pl.csv"
+verbs = [
+  "być",
+  "mieć",
+  "robić",
+  "mówić",
+  "iść",
+  "widzieć",
+  "dać",
+  "chcieć",
+  "wiedzieć",
+  "musieć",
+
+  "brać",
+  "stać",
+  "myśleć",
+  "patrzeć",
+  "słuchać",
+  "pracować",
+  "jeść",
+  "pić",
+  "mieszkać",
+  "żyć",
+
+  "kochać",
+  "lubić",
+  "czuć",
+  "wierzyć",
+  "szukać",
+  "znaleźć",
+  "otwierać",
+  "zamykać",
+  "sięgać",
+  "trzymać",
+
+  "prowadzić",
+  "jechać",
+  "wracać",
+  "wychodzić",
+  "wchodzić",
+  "przychodzić",
+  "zostawać",
+  "spotykać",
+  "poznawać",
+  "uczyć",
+
+  "uczyć się",
+  "czytać",
+  "pisać",
+  "liczyć",
+  "rozumieć",
+  "zapominać",
+  "pamiętać",
+  "pytać",
+  "odpowiadać",
+  "prosić",
+
+  "dawać",
+  "odbierać",
+  "kupować",
+  "sprzedawać",
+  "płacić",
+  "zarabiać",
+  "oszczędzać",
+  "wydawać",
+  "brać udział",
+  "decydować",
+
+  "planować",
+  "zmieniać",
+  "zaczynać",
+  "kończyć",
+  "próbować",
+  "udawać",
+  "wydarzyć się",
+  "dziać się",
+  "tworzyć",
+  "niszczyć",
+
+  "budować",
+  "naprawiać",
+  "psuć",
+  "otaczać",
+  "chronić",
+  "atakować",
+  "bronić",
+  "walczyć",
+  "wygrywać",
+  "przegrywać",
+
+  "biec",
+  "chodzić",
+  "lecieć",
+  "latać",
+  "pływać",
+  "siedzieć",
+  "stać",
+  "leżeć",
+  "spać",
+  "budzić się",
+
+  "myć",
+  "ubierać",
+  "rozbierać",
+  "gotować",
+  "sprzątać",
+  "czyścić",
+  "otwierać się",
+  "zamykać się",
+  "śmiać się",
+  "bać się"
+]
+
 DEST_DATA_FILE   = "data/result.json"
 
 def generate_for_chatgpt(words)
   prompt = <<~PROMPT
-    Я учу польский язык.
+    Я учу польские глаголы.
 
-    Даю тебе список слов, а ты мне в ответ JSON.
-    Формат ответа: Верни ТОЛЬКО JSON-массив объектов со следующими ключами:
+    Я дам тебе список глаголов, а ты вернёшь JSON.
 
-    - polish_word - String
-    - russian_translation - String
-    - russian_description - 1-2 предложения описание слова по русски
-    - polish_description - 1-2 предложения описание слова по польски
-    - usage_example - String - 1 предложение по польски с использованием слова
+    Верни ТОЛЬКО JSON-массив объектов. Без текста, без markdown.
+
+    Каждый объект должен иметь СТРОГО такую структуру:
+
+    {
+      "polish_word": "",
+      "russian": "",
+
+      "present": {
+        "ja": "",
+        "ty": "",
+        "on": "",
+        "ona": "",
+        "ono": "",
+        "my": "",
+        "wy": "",
+        "oni": "",
+        "one": ""
+      },
+
+      "past": {
+        "masculine": {
+          "ja": "",
+          "ty": "",
+          "on": "",
+          "my": "",
+          "wy": "",
+          "oni": ""
+        },
+        "feminine": {
+          "ja": "",
+          "ty": "",
+          "ona": "",
+          "my": "",
+          "wy": "",
+          "one": ""
+        },
+        "neuter": {
+          "ono": ""
+        }
+      },
+
+      "future": {
+        "masculine": {
+          "ja": "",
+          "ty": "",
+          "on": "",
+          "my": "",
+          "wy": "",
+          "oni": ""
+        },
+        "feminine": {
+          "ja": "",
+          "ty": "",
+          "ona": "",
+          "my": "",
+          "wy": "",
+          "one": ""
+        },
+        "neuter": {
+          "ono": ""
+        }
+      },
+
+      "conditional": {
+        "masculine": {
+          "ja": "",
+          "ty": "",
+          "on": "",
+          "my": "",
+          "wy": "",
+          "oni": ""
+        },
+        "feminine": {
+          "ja": "",
+          "ty": "",
+          "ona": "",
+          "my": "",
+          "wy": "",
+          "one": ""
+        },
+        "neuter": {
+          "ono": ""
+        }
+      },
+
+      "imperative": {
+        "ty": "",
+        "my": "",
+        "wy": ""
+      }
+    }
 
     Правила:
-    - Никакого текста вне JSON
-    - Без Markdown
-    - Без вступлений и пояснений
-    - Используй ТОЛЬКО слова из предоставленного списка.
-    - НЕ добавляй новые слова.
-    - НЕ заменяй слова на другие.
+    - Используй ТОЛЬКО глаголы из списка
+    - НЕ добавляй новые слова
+    - НЕ меняй глаголы
+    - Все формы должны быть реальными польскими формами
+    - Если глагол несовершенный — future делай через "będę + infinitive"
+    - Если совершенный — обычное будущее
+    - Никаких null, все поля должны быть заполнены строками
 
-    Вот сами слова:
+    Вот список глаголов:
     #{words.join(", ")}
-  PROMPT
+    PROMPT
 
   response = HTTParty.post(
     API_URL,
@@ -52,11 +250,7 @@ def generate_for_chatgpt(words)
   JSON.parse(content)
 end
 
-words = []
-CSV.foreach(SOURCE_DATA_FILE, headers: true, col_sep: "\t") do |row|
-  words << row["spelling"]
-  break if words.size >= 20_000
-end
+words = verbs
 
 puts "Загружено слов: #{words.size}"
 
@@ -67,7 +261,7 @@ result_data =
     []
   end
 
-CHUNK_SIZE = 20
+CHUNK_SIZE = 1
 MAX_RETRIES = 5
 RETRY_SLEEP = 5 # секунд
 

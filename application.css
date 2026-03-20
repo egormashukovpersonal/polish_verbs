@@ -12,12 +12,17 @@ html, body {
   user-select: none;
 }
 
+.char-card {
+  padding-bottom: 500px;
+}
+
 .char-card,
 .pl-translation,
-.russian_translation {
+.verb {
   -webkit-user-select: text;
   user-select: text;
 }
+
 #srs-btn {
   float: right;
   background: linear-gradient(135deg, #8e44ad, #3498db);
@@ -100,16 +105,14 @@ button {
   }
 }
 
-.russian_translation {
+.verb {
   font-size: 80px;
-  text-align: center;
   font-family: monospace;
   margin-top: 30px;
 }
 
 .pl-translation {
   font-size: 80px;
-  text-align: center;
   font-family: monospace;
   margin-bottom: 500px;
 }
@@ -133,14 +136,14 @@ button {
   bottom: 300px;
   left: 20px;
 }
-#reveal-letter {
+#reveal-one {
   position: fixed;
   width: calc(24% - 20px);
   z-index: 99;
   bottom: 300px;
   right: 20px;
 }
-#reveal-word {
+#reveal-row {
   position: fixed;
   width: calc(24% - 20px);
   z-index: 99;
@@ -185,13 +188,6 @@ button.completed {
 button.completed:hover {
   background: #27ae60;
 }
-button.locked {
-  background: #2c2c2c;
-  color: #666;
-  border: 1px solid #444;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
 
 .next-srs-btn {
   width: 30%;
@@ -203,13 +199,6 @@ button.locked {
   width: 8%;
   border: none;
   margin-left: 20px;
-}
-#speak-mute-btn {
-  background: none !important;
-  width: 7%;
-  margin-left: 20px;
-  border: none !important;
-  font-size: 70px;
 }
 .dev-toggle {
   background: none;
@@ -256,23 +245,6 @@ button.locked {
 .select-srs-size-btn {
   width: 15%;
 }
-.restore-rom-input-btn {
-  width: 20%;
-}
-.ignore-rom-input-btn {
-  width: 20%;
-}
-
-#restore-panel {
-  margin-bottom: 40px;
-  display: flex;
-  gap: 8px;
-}
-#restore-panel input {
-  flex: 1;
-  font-size: 50px;
-  padding: 20px 10px;
-}
 
 .srs-size-menu {
   margin-bottom: 40px;
@@ -281,7 +253,7 @@ h1 {
   font-size: 100px;
 }
 .header-h2 {
-  font-size: 40px;
+  font-size: 50px;
 }
 
 .fixed-bottom {
@@ -295,7 +267,31 @@ h1 {
   padding-top: 20px;
 }
 
-button.completed .level-number{
-  display: none;
+
+.verb-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+  font-size: 50px;
 }
 
+.verb-table td {
+  border-bottom: 1px solid #444;
+  padding: 10px;
+  text-align: left;
+  font-family: monospace;
+}
+
+.verb-table td:first-child {
+  width: 30%;
+  opacity: 0.6;
+}
+
+.ono-block {
+  margin-top: 10px;
+  margin-bottom: 30px;
+  font-size: 32px;
+  opacity: 0.7;
+  text-align: right;
+  font-family: monospace;
+}
