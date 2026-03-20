@@ -303,20 +303,49 @@ function createVerbRevealState(verb) {
   };
 }
 function renderPresentMasked(state) {
+  const t = "present";
+
   return `
     <h2 class="header-h2">Present</h2>
     <table class="verb-table">
-      ${["ja","ty","on","ona","ono","my","wy","oni","one"]
-        .map(p => {
-          const cell = state.cells.find(c => c.tense==="present" && c.person===p);
-          return `
-            <tr>
-              <td>${p}</td>
-              <td>${mask(cell?.value, cell?.revealedCount)}</td>
-            </tr>
-          `;
-        }).join("")}
+      ${rowPresent(state, "ja")}
+      ${rowPresent(state, "ty")}
+
+      ${rowPresentCombined(state, ["on","ona","ono"], "on/ona/ono")}
+
+      ${rowPresent(state, "my")}
+      ${rowPresent(state, "wy")}
+
+      ${rowPresentCombined(state, ["oni","one"], "oni/one")}
     </table>
+  `;
+}
+function getPresentGroupCells(state, persons) {
+  return persons
+    .map(p => getCell(state, "present", p))
+    .filter(Boolean);
+}
+function rowPresent(state, person) {
+  const c = getCell(state, "present", person);
+
+  return `
+    <tr>
+      <td>${person}</td>
+      <td>${mask(c?.value, c?.revealedCount)}</td>
+    </tr>
+  `;
+}
+function rowPresentCombined(state, persons, label) {
+  const cells = persons.map(p => getCell(state, "present", p));
+
+  // берём первую (они одинаковые по значению)
+  const c = cells[0];
+
+  return `
+    <tr>
+      <td>${label}</td>
+      <td>${mask(c?.value, c?.revealedCount)}</td>
+    </tr>
   `;
 }
 function mask(val, revealedCount) {
@@ -529,6 +558,18 @@ function renderVerbReveal(containerId, verb) {
 
   render();
 }
+function rowMaskedCombined(state, tense, persons, label) {
+  const m = getCell(state, tense, persons[0], "m");
+  const f = getCell(state, tense, persons[1], "f");
+
+  return `
+    <tr>
+      <td>${label}</td>
+      <td>${mask(m?.value, m?.revealedCount)}</td>
+      <td>${mask(f?.value, f?.revealedCount)}</td>
+    </tr>
+  `;
+}
 function revealWord(state) {
   const cell = state.cells.find(c =>
     c.value && c.revealedCount < c.value.length
@@ -536,6 +577,28 @@ function revealWord(state) {
 
   if (!cell) return;
 
+  // группы present
+  if (cell.tense === "present" && ["on","ona","ono"].includes(cell.person)) {
+    const group = getPresentGroupCells(state, ["on","ona","ono"]);
+
+    group.forEach(c => {
+      c.revealedCount = c.value.length;
+    });
+
+    return;
+  }
+
+  if (cell.tense === "present" && ["oni","one"].includes(cell.person)) {
+    const group = getPresentGroupCells(state, ["oni","one"]);
+
+    group.forEach(c => {
+      c.revealedCount = c.value.length;
+    });
+
+    return;
+  }
+
+  // обычное
   cell.revealedCount = cell.value.length;
 }
 function renderPresent(present) {
@@ -680,17 +743,42 @@ function row3(label, m, f, n) {
     </tr>
   `;
 }
-
 function revealOne(state) {
+  // ищем первую не раскрытую ячейку
   const cell = state.cells.find(c =>
     c.value && c.revealedCount < c.value.length
   );
 
   if (!cell) return;
 
+  // если это present и входит в группу
+  if (cell.tense === "present" && ["on","ona","ono"].includes(cell.person)) {
+    const group = getPresentGroupCells(state, ["on","ona","ono"]);
+
+    group.forEach(c => {
+      if (c.revealedCount < c.value.length) {
+        c.revealedCount++;
+      }
+    });
+
+    return;
+  }
+
+  if (cell.tense === "present" && ["oni","one"].includes(cell.person)) {
+    const group = getPresentGroupCells(state, ["oni","one"]);
+
+    group.forEach(c => {
+      if (c.revealedCount < c.value.length) {
+        c.revealedCount++;
+      }
+    });
+
+    return;
+  }
+
+  // обычное поведение
   cell.revealedCount++;
 }
-
 function getCell(state, tense, person, gender) {
   return state.cells.find(c =>
     c.tense === tense &&
@@ -712,12 +800,13 @@ function renderPastCompactMasked(state) {
 
       ${rowMasked2(state, t, "ja")}
       ${rowMasked2(state, t, "ty")}
-      ${rowMasked2(state, t, "on")}
-      ${rowMasked2(state, t, "ona")}
+
+      ${rowMaskedCombined(state, t, ["on","ona"], "on/ona")}
+
       ${rowMasked2(state, t, "my")}
       ${rowMasked2(state, t, "wy")}
-      ${rowMasked2(state, t, "oni")}
-      ${rowMasked2(state, t, "one")}
+
+      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
     </table>
 
     <div class="ono-block">
@@ -742,12 +831,13 @@ function renderFutureCompactMasked(state) {
 
       ${rowMasked2(state, t, "ja")}
       ${rowMasked2(state, t, "ty")}
-      ${rowMasked2(state, t, "on")}
-      ${rowMasked2(state, t, "ona")}
+
+      ${rowMaskedCombined(state, t, ["on","ona"], "on/ona")}
+
       ${rowMasked2(state, t, "my")}
       ${rowMasked2(state, t, "wy")}
-      ${rowMasked2(state, t, "oni")}
-      ${rowMasked2(state, t, "one")}
+
+      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
     </table>
 
     <div class="ono-block">
@@ -772,12 +862,13 @@ function renderConditionalCompactMasked(state) {
 
       ${rowMasked2(state, t, "ja")}
       ${rowMasked2(state, t, "ty")}
-      ${rowMasked2(state, t, "on")}
-      ${rowMasked2(state, t, "ona")}
+
+      ${rowMaskedCombined(state, t, ["on","ona"], "on/ona")}
+
       ${rowMasked2(state, t, "my")}
       ${rowMasked2(state, t, "wy")}
-      ${rowMasked2(state, t, "oni")}
-      ${rowMasked2(state, t, "one")}
+
+      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
     </table>
 
     <div class="ono-block">
