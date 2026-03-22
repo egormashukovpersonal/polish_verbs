@@ -3,6 +3,80 @@ const TURN_LENGTH = 0;
 const WORDS_PER_LEVEL = 1;
 const MASK_WITH = '\u00A0';
 
+const GROUPS = [
+  { name: "-ić / -yć", key: "ic" },
+  { name: "-ać", key: "ac" },
+  { name: "-eć", key: "ec" },
+  { name: "-ować", key: "owac" },
+  { name: "irregular", key: "irr" }
+];
+const GROUP_LABELS = {
+  owac: "-ować",
+  ic: "-ić / -yć",
+  ac: "-ać",
+  ec: "-eć",
+  irr: "irregular"
+};
+const GROUP_ORDER = ["owac", "ic", "ac", "ec", "irr"];
+
+function groupVerbs(verbs) {
+  const groups = {};
+
+  verbs.forEach(v => {
+    const g = getVerbGroup(v);
+
+    if (!groups[g]) {
+      groups[g] = [];
+    }
+
+    groups[g].push(v);
+  });
+
+  return groups;
+}
+function normalizeVerb(v) {
+  return v.replace(/\s*się$/, "");
+}
+function getVerbGroup(verb) {
+  let v = normalizeVerb(verb.polish_word);
+
+  // --- ЖЁСТКИЕ irregular ---
+  if ([
+    "być",
+    "iść",
+    "jeść",
+    "dać",
+    "brać",
+    "stać",
+    "mieć",
+    "wiedzieć",
+    "chcieć"
+  ].includes(v)) {
+    return "irr";
+  }
+
+  // --- perfective (очень важно) ---
+  if ([
+    "znaleźć",
+    "wydarzyć"
+  ].includes(v)) {
+    return "irr";
+  }
+
+  // --- специальные фиксы ---
+  if (["czuć", "psuć"].includes(v)) {
+    return "ic";
+  }
+
+  // --- обычные группы ---
+  if (v.endsWith("ować")) return "owac";
+  if (v.endsWith("ać")) return "ac";
+  if (v.endsWith("eć")) return "ec";
+  if (v.endsWith("ić") || v.endsWith("yć")) return "ic";
+
+  return "irr";
+}
+
 let HSK = [];
 let revealIndex = 0;
 
@@ -63,15 +137,9 @@ function isLevelCompleted(level) {
   const progress = getProgress();
   return !!progress.completedLevels?.[level];
 }
-
 function renderPath() {
-  const maxId = Math.max(...HSK.map(c => c.id));
-  const totalLevels = Math.ceil(maxId / WORDS_PER_LEVEL);
+  const groups = groupVerbs(HSK);
 
-  const visibleLevels = [];
-  for (let lvl = 1; lvl <= totalLevels; lvl++) {
-    visibleLevels.push(lvl);
-  }
   app.innerHTML = `
     <div class="fixed-bottom">
       <button id='srs-btn' onclick='startSrsSession()'>SRS</button>
@@ -81,28 +149,52 @@ function renderPath() {
 
   const path = document.getElementById("path");
 
-  let index = 0;
-  let direction = "forward";
+  GROUP_ORDER.forEach(groupKey => {
+    const verbs = groups[groupKey];
+    if (!verbs || verbs.length === 0) return;
 
-  while (index < visibleLevels.length) {
-    const rowLevels = visibleLevels.slice(
-      index,
-      index + LEVELS_PER_ROW
-    );
+    // заголовок
+    const title = document.createElement("h1");
+    title.textContent = GROUP_LABELS[groupKey];
+    path.appendChild(title);
 
-    createRowFromLevels(path, direction, rowLevels);
-    index += rowLevels.length;
+    // grid как у тебя
+    let index = 0;
+    let direction = "forward";
 
-    if (index >= visibleLevels.length) break;
+    while (index < verbs.length) {
+      const rowVerbs = verbs.slice(index, index + LEVELS_PER_ROW);
 
-    if (TURN_LENGTH > 0) {
-      const turnLevels = visibleLevels.slice(index, index + TURN_LENGTH);
-      createTurnFromLevels(path, direction, turnLevels);
-      index += turnLevels.length;
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const ordered =
+        direction === "forward"
+          ? rowVerbs
+          : [...rowVerbs].reverse();
+
+      ordered.forEach(v => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+
+        const btn = document.createElement("button");
+        btn.textContent = v.polish_word;
+
+        btn.onclick = () => {
+          location.hash = `/level/${v.id}`;
+          window.location.reload();
+        };
+
+        cell.appendChild(btn);
+        row.appendChild(cell);
+      });
+
+      path.appendChild(row);
+
+      index += rowVerbs.length;
+      direction = direction === "forward" ? "backward" : "forward";
     }
-
-    direction = direction === "forward" ? "backward" : "forward";
-  }
+  });
 }
 
 function getCharsForLevel(level) {
