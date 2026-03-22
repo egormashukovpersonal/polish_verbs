@@ -241,7 +241,7 @@ function renderLevel(level, index = 0) {
       ${
         !isLast
           ? `<button class="next-btn" onclick="location.hash='#/level/${level}/${index + 1}'">→</button>`
-          : `<button class="next-btn" onclick="finishAndGoNext(${level})">→</button>`
+          : `<button class="next-btn" onclick="finishLevel(${level})">✓</button>`
       }
     </div>
 
@@ -252,6 +252,13 @@ function renderLevel(level, index = 0) {
   `;
   renderVerbReveal("sentence-reveal", c)
 }
+
+function finishLevel(level) {
+  markLevelCompleted(level);
+  location.hash = "#";
+  window.location.reload();
+}
+
 function createVerbRevealState(verb) {
   const cells = [];
 
