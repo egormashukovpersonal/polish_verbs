@@ -1,6 +1,7 @@
 const LEVELS_PER_ROW = 3;
 const TURN_LENGTH = 0;
 const WORDS_PER_LEVEL = 1;
+const MASK_WITH = ' ';
 
 let HSK = [];
 let revealIndex = 0;
@@ -313,11 +314,11 @@ function renderPresentMasked(state) {
       ${rowPresent(state, "ty")}
 
       ${rowPresentCombined(state, ["on","ona","ono"], "on/ona/ono")}
+      ${rowPresentCombined(state, ["oni","one"], "oni/one")}
 
       ${rowPresent(state, "my")}
       ${rowPresent(state, "wy")}
 
-      ${rowPresentCombined(state, ["oni","one"], "oni/one")}
     </table>
   `;
 }
@@ -356,7 +357,7 @@ function mask(val, revealedCount) {
     .split("")
     .map((ch, i) => {
       if (ch === " ") return " ";
-      return i < revealedCount ? ch : "*";
+      return i < revealedCount ? ch : MASK_WITH;
     })
     .join("");
 }
@@ -395,7 +396,7 @@ function buildMaskedSentence(state) {
       return ch.original;
     }
 
-    return ch.revealed ? ch.original : "*";
+    return ch.revealed ? ch.original : MASK_WITH;
   }).join("");
 }
 
@@ -607,97 +608,6 @@ function revealWord(state) {
   // обычное
   cell.revealedCount = cell.value.length;
 }
-function renderPresent(present) {
-  return `
-    <h2 class="header-h2">Present</h2>
-    <table class="verb-table">
-      ${row("ja", present.ja)}
-      ${row("ty", present.ty)}
-      ${row("on", present.on)}
-      ${row("ona", present.ona)}
-      ${row("ono", present.ono)}
-      ${row("my", present.my)}
-      ${row("wy", present.wy)}
-      ${row("oni", present.oni)}
-      ${row("one", present.one)}
-    </table>
-  `;
-}
-function renderPastCompact(past) {
-  return `
-    <h2 class="header-h2">Past</h2>
-    <table class="verb-table">
-      <tr>
-        <td></td>
-        <td>m</td>
-        <td>f</td>
-      </tr>
-
-      ${row2("ja", past.masculine.ja, past.feminine.ja)}
-      ${row2("ty", past.masculine.ty, past.feminine.ty)}
-      ${row2("on", past.masculine.on, "")}
-      ${row2("ona", "", past.feminine.ona)}
-      ${row2("my", past.masculine.my, past.feminine.my)}
-      ${row2("wy", past.masculine.wy, past.feminine.wy)}
-      ${row2("oni", past.masculine.oni, "")}
-      ${row2("one", "", past.feminine.one)}
-    </table>
-
-    <div class="ono-block">
-      ono: ${past.neuter.ono}
-    </div>
-  `;
-}
-function renderFutureCompact(future) {
-  return `
-    <h2 class="header-h2">Future</h2>
-    <table class="verb-table">
-      <tr>
-        <td></td>
-        <td>m</td>
-        <td>f</td>
-      </tr>
-
-      ${row2("ja", future.masculine.ja, future.feminine.ja)}
-      ${row2("ty", future.masculine.ty, future.feminine.ty)}
-      ${row2("on", future.masculine.on, "")}
-      ${row2("ona", "", future.feminine.ona)}
-      ${row2("my", future.masculine.my, future.feminine.my)}
-      ${row2("wy", future.masculine.wy, future.feminine.wy)}
-      ${row2("oni", future.masculine.oni, "")}
-      ${row2("one", "", future.feminine.one)}
-    </table>
-
-    <div class="ono-block">
-      ono: ${future.neuter.ono}
-    </div>
-  `;
-}
-function renderConditionalCompact(conditional) {
-  return `
-    <h2 class="header-h2">Conditional</h2>
-    <table class="verb-table">
-      <tr>
-        <td></td>
-        <td>m</td>
-        <td>f</td>
-      </tr>
-
-      ${row2("ja", conditional.masculine.ja, conditional.feminine.ja)}
-      ${row2("ty", conditional.masculine.ty, conditional.feminine.ty)}
-      ${row2("on", conditional.masculine.on, "")}
-      ${row2("ona", "", conditional.feminine.ona)}
-      ${row2("my", conditional.masculine.my, conditional.feminine.my)}
-      ${row2("wy", conditional.masculine.wy, conditional.feminine.wy)}
-      ${row2("oni", conditional.masculine.oni, "")}
-      ${row2("one", "", conditional.feminine.one)}
-    </table>
-
-    <div class="ono-block">
-      ono: ${conditional.neuter.ono}
-    </div>
-  `;
-}
 
 function renderPast(title, data) {
   if (!data) return "";
@@ -808,14 +718,14 @@ function renderPastCompactMasked(state) {
       ${rowMasked2(state, t, "ty")}
 
       ${rowMaskedCombined(state, t, ["on","ona"], "on/ona")}
+      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
 
       ${rowMasked2(state, t, "my")}
       ${rowMasked2(state, t, "wy")}
 
-      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
     </table>
 
-    <div class="ono-block">
+    <div class="ono-block"  style="display:none">
       ono: ${mask(
         getCell(state, t, "ono", "n")?.value,
         getCell(state, t, "ono", "n")?.revealedCount
@@ -839,14 +749,14 @@ function renderFutureCompactMasked(state) {
       ${rowMasked2(state, t, "ty")}
 
       ${rowMaskedCombined(state, t, ["on","ona"], "on/ona")}
+      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
 
       ${rowMasked2(state, t, "my")}
       ${rowMasked2(state, t, "wy")}
 
-      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
     </table>
 
-    <div class="ono-block">
+    <div class="ono-block" style="display:none">
       ono: ${mask(
         getCell(state, t, "ono", "n")?.value,
         getCell(state, t, "ono", "n")?.revealedCount
@@ -870,14 +780,14 @@ function renderConditionalCompactMasked(state) {
       ${rowMasked2(state, t, "ty")}
 
       ${rowMaskedCombined(state, t, ["on","ona"], "on/ona")}
+      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
 
       ${rowMasked2(state, t, "my")}
       ${rowMasked2(state, t, "wy")}
 
-      ${rowMaskedCombined(state, t, ["oni","one"], "oni/one")}
     </table>
 
-    <div class="ono-block">
+    <div class="ono-block" style="display:none">
       ono: ${mask(
         getCell(state, t, "ono", "n")?.value,
         getCell(state, t, "ono", "n")?.revealedCount
