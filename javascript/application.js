@@ -8,17 +8,81 @@ const GROUPS = [
   { name: "-ać", key: "ac" },
   { name: "-eć", key: "ec" },
   { name: "-ować", key: "owac" },
-  { name: "irregular", key: "irr" }
+  { name: "irregular", key: "irr" },
+  { name: "perfective", key: "perf" }
 ];
 const GROUP_LABELS = {
   owac: "-ować",
   ic: "-ić / -yć",
   ac: "-ać",
   ec: "-eć",
-  irr: "irregular"
+  irr: "irregular",
+  perf: "perfective"
 };
-const GROUP_ORDER = ["owac", "ic", "ac", "ec", "irr"];
+const GROUP_ORDER = ["owac", "ic", "ac", "ec", "irr", "perf"];
 
+const PERFECTIVE = new Set([
+  "napisać",
+  "przeczytać",
+  "zobaczyć",
+  "usłyszeć",
+  "powiedzieć",
+  "zapytać",
+  "odpowiedzieć",
+  "kupić",
+  "sprzedać",
+  "zapłacić",
+  "zarobić",
+  "wydać",
+  "zaoszczędzić",
+  "otworzyć",
+  "zamknąć",
+  "znaleźć",
+  "znaleźć się",
+  "spotkać",
+  "poznać",
+  "nauczyć",
+  "nauczyć",
+  "zrozumieć",
+  "zapomnieć",
+  "zapamiętać",
+  "poprosić",
+  "zdecydować",
+  "zaplanować",
+  "zmienić",
+  "zacząć",
+  "skończyć",
+  "spróbować",
+  "udać",
+  "stworzyć",
+  "zniszczyć",
+  "zbudować",
+  "naprawić",
+  "zepsuć",
+  "ochronić",
+  "zaatakować",
+  "obronić",
+  "wygrać",
+  "wydarzyć",
+  "wydarzyć się",
+  "zrobić",
+  "kupić",
+  "skończyć",
+  "zapłacić",
+  "nauczyć się",
+  "zmartwić",
+  "ucieszyć",
+  "udać się",
+
+  // irregular perf тоже добавь
+  "pójść",
+  "przyjść",
+  "odejść",
+  "wyjść",
+  "wejść",
+  "zejść",
+  "dojść"
+]);
 function groupVerbs(verbs) {
   const groups = {};
 
@@ -55,12 +119,8 @@ function getVerbGroup(verb) {
     return "irr";
   }
 
-  // --- perfective (очень важно) ---
-  if ([
-    "znaleźć",
-    "wydarzyć"
-  ].includes(v)) {
-    return "irr";
+  if (PERFECTIVE.has(verb.polish_word)) {
+    return "perf";
   }
 
   // --- специальные фиксы ---

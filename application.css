@@ -44,7 +44,7 @@ html, body {
 .path {
   display: inline-flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 5px;
   padding-right: 20px;
   min-width: 100%;
   padding-bottom: 800px;
@@ -80,9 +80,9 @@ html, body {
 .cell button {
   border-radius: 20px;
   height: auto;
-  min-height: 150px;
+  min-height: 80px;
   min-width: 150px;
-  font-size: 50px;
+  font-size: 40px;
 }
 
 button {
@@ -267,6 +267,7 @@ button.completed:hover {
 }
 h1 {
   font-size: 100px;
+  margin-bottom: 0;
 }
 .header-h2 {
   font-size: 50px;
