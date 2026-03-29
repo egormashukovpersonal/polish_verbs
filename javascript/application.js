@@ -244,6 +244,7 @@ function renderPath() {
           btn.classList.add("completed");
         }
         btn.onclick = () => {
+          localStorage.setItem("pathScroll", window.scrollY);
           location.hash = `/level/${v.id}`;
           window.location.reload();
         };
@@ -258,6 +259,10 @@ function renderPath() {
       direction = direction === "forward" ? "backward" : "forward";
     }
   });
+  const savedScroll = localStorage.getItem("pathScroll");
+  if (savedScroll !== null) {
+    window.scrollTo(0, parseInt(savedScroll, 10));
+  }
 }
 
 function getCharsForLevel(level) {
