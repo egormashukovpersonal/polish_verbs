@@ -8,18 +8,20 @@ const GROUPS = [
   { name: "-ać", key: "ac" },
   { name: "-eć", key: "ec" },
   { name: "-ować", key: "owac" },
+  { name: "-awać", key: "awac" },
   { name: "irregular", key: "irr" },
   { name: "perfective", key: "perf" }
 ];
 const GROUP_LABELS = {
   owac: "-ować",
+  awac: "-awać",
   ic: "-ić / -yć",
   ac: "-ać",
   ec: "-eć",
   irr: "irregular",
   perf: "perfective"
 };
-const GROUP_ORDER = ["owac", "ic", "ac", "ec", "irr", "perf"];
+const GROUP_ORDER = ["owac", "awac", "ic", "ac", "ec", "irr", "perf"];
 
 const PERFECTIVE = new Set([
   "napisać",
@@ -130,6 +132,7 @@ function getVerbGroup(verb) {
 
   // --- обычные группы ---
   if (v.endsWith("ować")) return "owac";
+  if (v.endsWith("awać")) return "awac";
   if (v.endsWith("ać")) return "ac";
   if (v.endsWith("eć")) return "ec";
   if (v.endsWith("ić") || v.endsWith("yć")) return "ic";
