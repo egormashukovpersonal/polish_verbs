@@ -179,6 +179,10 @@ function router() {
   }
 }
 
+function getToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 window.addEventListener("hashchange", router);
 
 function getProgress() {
@@ -192,7 +196,7 @@ function saveProgress(progress) {
 function markLevelCompleted(level) {
   const progress = getProgress();
   progress.completedLevels ||= {};
-  progress.completedLevels[level] = true;
+  progress.completedLevels[level] = getToday();
   saveProgress(progress);
 }
 
@@ -200,6 +204,12 @@ function isLevelCompleted(level) {
   const progress = getProgress();
   return !!progress.completedLevels?.[level];
 }
+
+function isLevelCompletedToday(level) {
+  const progress = getProgress();
+  return progress.completedLevels?.[level] === getToday();
+}
+
 function renderPath() {
   const groups = groupVerbs(HSK);
 
@@ -245,6 +255,10 @@ function renderPath() {
 
         if (isLevelCompleted(v.id)) {
           btn.classList.add("completed");
+        }
+
+        if (isLevelCompletedToday(v.id)) {
+          btn.classList.add("completed-today");
         }
         btn.onclick = () => {
           localStorage.setItem("pathScroll", window.scrollY);

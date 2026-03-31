@@ -200,7 +200,9 @@ button.completed {
   color: #000;
   border: none;
 }
-
+button.completed-today {
+  background: lightgreen;
+}
 button.completed:hover {
   background: #27ae60;
 }
