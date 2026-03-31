@@ -462,13 +462,6 @@ function createVerbRevealState(verb) {
     "my",
     "wy"
   ];
-  // PAST (m/f + ono отдельно)
-  ORDER.forEach(p => {
-    push("past", p, verb.past.masculine[p], { gender: "m" });
-    push("past", p, verb.past.feminine[p], { gender: "f" });
-  });
-
-  // push("past", "ono", verb.past.neuter.ono, { gender: "n" });
 
   // FUTURE
   ORDER.forEach(p => {
@@ -477,6 +470,14 @@ function createVerbRevealState(verb) {
   });
 
   // push("future", "ono", verb.future.neuter.ono, { gender: "n" });
+
+  // PAST (m/f + ono отдельно)
+  ORDER.forEach(p => {
+    push("past", p, verb.past.masculine[p], { gender: "m" });
+    push("past", p, verb.past.feminine[p], { gender: "f" });
+  });
+
+  // push("past", "ono", verb.past.neuter.ono, { gender: "n" });
 
   // CONDITIONAL
   ORDER.forEach(p => {
@@ -500,7 +501,7 @@ function renderPresentMasked(state) {
   const t = "present";
 
   return `
-    <h2 class="header-h2">Present</h2>
+    <h1 style="margin-bottom: 60px">Present</h1>
     <table class="verb-table">
       ${rowPresent(state, "ja")}
       ${rowPresent(state, "ty")}
@@ -729,8 +730,8 @@ function renderVerbReveal(containerId, verb) {
       </div>
 
       ${renderPresentMasked(state)}
-      ${renderPastCompactMasked(state)}
       ${renderFutureCompactMasked(state)}
+      ${renderPastCompactMasked(state)}
       ${renderConditionalCompactMasked(state)}
       ${renderImperativeMasked(state)}
     `;
@@ -799,19 +800,6 @@ function revealWord(state) {
 
   // обычное
   cell.revealedCount = cell.value.length;
-}
-
-function renderPast(title, data) {
-  if (!data) return "";
-
-  return `
-    <h2 class="header-h2">${title}</h2>
-    <table class="verb-table">
-      ${Object.entries(data)
-        .map(([k, v]) => row(k, v))
-        .join("")}
-    </table>
-  `;
 }
 
 function row(label, value) {
@@ -888,7 +876,7 @@ function renderPastCompactMasked(state) {
   const t = "past";
 
   return `
-    <h2 class="header-h2">Past</h2>
+    <h1 style="margin-bottom: 60px">Past</h1>
     <table class="verb-table">
       <tr>
         <td></td>
@@ -919,7 +907,7 @@ function renderFutureCompactMasked(state) {
   const t = "future";
 
   return `
-    <h2 class="header-h2">Future</h2>
+    <h1 style="margin-bottom: 60px">Future</h1>
     <table class="verb-table">
       <tr>
         <td></td>
@@ -950,7 +938,7 @@ function renderConditionalCompactMasked(state) {
   const t = "conditional";
 
   return `
-    <h2 class="header-h2">Conditional</h2>
+    <h1 style="margin-bottom: 60px">Conditional</h1>
     <table class="verb-table">
       <tr>
         <td></td>
@@ -981,7 +969,7 @@ function renderImperativeMasked(state) {
   const t = "imperative";
 
   return `
-    <h2 class="header-h2">Imperative</h2>
+    <h1 style="margin-bottom: 60px">Imperative</h1>
     <table class="verb-table">
       ${["ty","my","wy"].map(p => {
         const c = getCell(state, t, p);
