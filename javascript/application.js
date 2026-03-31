@@ -501,7 +501,7 @@ function renderPresentMasked(state) {
   const t = "present";
 
   return `
-    <h1 style="margin-bottom: 60px">Present</h1>
+    <h1 style="margin-top: 80px;margin-bottom: 20px">Present</h1>
     <table class="verb-table">
       ${rowPresent(state, "ja")}
       ${rowPresent(state, "ty")}
@@ -876,7 +876,7 @@ function renderPastCompactMasked(state) {
   const t = "past";
 
   return `
-    <h1 style="margin-bottom: 60px">Past</h1>
+    <h1 style="margin-top: 80px;margin-bottom: 20px">Past</h1>
     <table class="verb-table">
       <tr>
         <td></td>
@@ -907,7 +907,7 @@ function renderFutureCompactMasked(state) {
   const t = "future";
 
   return `
-    <h1 style="margin-bottom: 60px">Future</h1>
+    <h1 style="margin-top: 80px;margin-bottom: 20px">Future</h1>
     <table class="verb-table">
       <tr>
         <td></td>
@@ -938,7 +938,7 @@ function renderConditionalCompactMasked(state) {
   const t = "conditional";
 
   return `
-    <h1 style="margin-bottom: 60px">Conditional</h1>
+    <h1 style="margin-top: 80px;margin-bottom: 20px">Conditional</h1>
     <table class="verb-table">
       <tr>
         <td></td>
@@ -969,7 +969,7 @@ function renderImperativeMasked(state) {
   const t = "imperative";
 
   return `
-    <h1 style="margin-bottom: 60px">Imperative</h1>
+    <h1 style="margin-top: 80px;margin-bottom: 20px">Imperative</h1>
     <table class="verb-table">
       ${["ty","my","wy"].map(p => {
         const c = getCell(state, t, p);
